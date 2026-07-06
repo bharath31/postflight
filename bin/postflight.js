@@ -4,11 +4,17 @@
 // with no path, it finds your most recent Claude Code transcript.
 
 import { readdirSync, statSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { parseTranscript } from "../lib/parse.js";
 import { analyze } from "../lib/analyze.js";
 import { toMarkdown, skillMarkdown } from "../lib/report.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// bundled sample run, so anyone can see the flight review with zero setup:
+//   npx agent-postflight --demo
+const DEMO_PATH = join(__dirname, "..", "examples", "session.jsonl");
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith("--")));
@@ -45,6 +51,7 @@ function main() {
       `postflight — read your agent's run back.\n\n` +
         `usage:\n` +
         `  postflight [transcript.jsonl]   review a run (default: your latest Claude Code run)\n` +
+        `  postflight --demo               review a bundled sample run (no setup needed)\n` +
         `  postflight --list               list recent runs\n` +
         `  postflight --json               emit findings as JSON\n` +
         `  postflight --skill              write the proposed skill to .claude/skills/<name>/SKILL.md\n`
@@ -63,11 +70,15 @@ function main() {
   }
 
   let path = positional[0];
+  if (flags.has("--demo")) {
+    path = DEMO_PATH;
+  }
   if (!path) {
     if (!transcripts.length) {
       console.error(
-        "postflight: no transcript given and none found under ~/.claude/projects.\n" +
-          "pass a path: postflight path/to/run.jsonl"
+        "postflight: no transcript given and none found under ~/.claude/projects.\n\n" +
+          "  try the bundled sample:  postflight --demo\n" +
+          "  or point at a run:        postflight path/to/run.jsonl"
       );
       process.exit(1);
     }
@@ -90,7 +101,7 @@ function main() {
     return;
   }
 
-  process.stdout.write(toMarkdown(a, { source: path }));
+  process.stdout.write(toMarkdown(a, { source: flags.has("--demo") ? "bundled sample · your own run: npx agent-postflight" : path }));
 
   if (flags.has("--skill")) {
     if (!a.skill) {

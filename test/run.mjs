@@ -22,6 +22,18 @@ function ok(cond, msg) {
 const parsed = parseTranscript(fixture);
 const a = analyze(parsed);
 
+// --- duplicate message.id handling (Claude Code splits one message across lines,
+//     each repeating the same cumulative usage — must count once, not per line) ---
+const dup = parseTranscript(join(here, "fixture-dup.jsonl"));
+// msg_A appears on 3 lines @200 output, msg_B on 1 line @150. Summed-per-line = 750;
+// correct (deduped by id) = 350.
+ok(dup.usage.output === 350, `dup usage counted once per message.id (got ${dup.usage.output}, want 350)`);
+ok(dup.assistantTurns === 2, `dup turns counted once per message.id (got ${dup.assistantTurns}, want 2)`);
+ok(dup.usage.cacheRead === 1100, `dup cache-read counted once per message.id (got ${dup.usage.cacheRead}, want 1100)`);
+ok(dup.toolCalls.length === 3, `all 3 tool_use blocks kept across split lines (got ${dup.toolCalls.length})`);
+const dupHeavy = [...dup.heavy].sort((x, y) => y.outputTokens - x.outputTokens);
+ok(dupHeavy.length === 2 && dupHeavy[0].outputTokens === 200, `heaviest turns deduped (got ${dupHeavy.length} turns)`);
+
 // parse
 ok(parsed.toolCalls.length === 5, `5 tool calls (got ${parsed.toolCalls.length})`);
 ok(parsed.usage.output === 460, `output tokens summed (got ${parsed.usage.output})`);

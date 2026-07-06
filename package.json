@@ -1,6 +1,6 @@
 {
   "name": "agent-postflight",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read your agent's run back. A harness-neutral CLI that turns an agent transcript into a flight review + a skill to extract — so the next run is better, not just observed.",
   "type": "module",
   "bin": {
@@ -29,6 +29,7 @@
   "files": [
     "bin/",
     "lib/",
+    "examples/",
     "README.md",
     "LICENSE"
   ]

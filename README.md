@@ -18,30 +18,40 @@ loop leaked.
 
 ## the demo is the argument
 
-run it on a real session:
+no transcript handy? run the bundled sample — one command, no setup, the same shape of review
+you'd get on your own run:
 
 ```
-$ npx agent-postflight
+$ npx agent-postflight --demo
 
 # postflight — flight review
 
-**725 tool calls** across 1,434 turns · 20 distinct tools · 3d 8h (resumed) · 1,319,024 tokens generated
+**32 tool calls** across 32 turns · 4 distinct tools · 32s · 14,900 tokens generated
 
-> worth a look: 26 tool errors (4%) · ~57,015 tokens re-reading the same things · 8 redundant read patterns · 8 retry loops
+> worth a look: 5 tool errors (16%) · ~24,543 tokens re-reading the same things · 5 redundant read patterns · 2 retry loops
 
 ## redundant work — the agent re-derived the same thing
-- `Read` × 27 — `site/agent-worker/src/index.ts` · ~29,128 tokens
-- `Read` × 8  — `README.md` · ~1,344 tokens
-- `Read` × 7  — `site/index.html` · ~9,396 tokens
+- `Read` × 12 — `~/src/db/schema.ts` · ~23,166 tokens
+- `Read` × 5  — `~/package.json` · ~752 tokens
+- `Read` × 2  — `~/src/middleware/auth.ts` · ~608 tokens
+
+## retry loops — errored, then tried again
+- `Bash` — 3 attempts, never recovered — `npm run lint`
 
 ## the skill to extract →
-the agent ran `Read` on index.ts 27× — re-deriving the same thing instead of remembering it.
-capture its durable facts once (a skill, or a line in CLAUDE.md), and the next run reads it once.
+the agent ran `Read` on schema.ts 12× — re-deriving the same thing instead of remembering it.
+capture its durable facts once (a skill, or a line in CLAUDE.md/AGENTS.md), and the next run reads it once.
 ```
 
-that `Read × 27` is a real number from a real session. the agent read the same file twenty-seven
-times because nothing told it to remember. that's not a model problem. it's a missing loop — and a
-missing loop is a skill waiting to be written.
+then point it at your own latest run — no flag needed:
+
+```
+npx agent-postflight
+```
+
+that shape is real. on one production session postflight flagged `Read × 27` on a single file — the
+agent read the same thing twenty-seven times because nothing told it to remember. that's not a model
+problem. it's a missing loop — and a missing loop is a skill waiting to be written.
 
 ## what it finds
 
@@ -57,6 +67,7 @@ missing loop is a skill waiting to be written.
 
 ```
 postflight                    review your latest Claude Code run
+postflight --demo             review a bundled sample run (no setup needed)
 postflight path/to/run.jsonl  review a specific transcript
 postflight --list             list recent runs
 postflight --json             findings as JSON (pipe it anywhere)
