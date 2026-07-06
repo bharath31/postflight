@@ -1,0 +1,35 @@
+{
+  "name": "agent-postflight",
+  "version": "0.1.0",
+  "description": "Read your agent's run back. A harness-neutral CLI that turns an agent transcript into a flight review + a skill to extract — so the next run is better, not just observed.",
+  "type": "module",
+  "bin": {
+    "agent-postflight": "bin/postflight.js",
+    "postflight": "bin/postflight.js"
+  },
+  "scripts": {
+    "test": "node test/run.mjs"
+  },
+  "keywords": [
+    "agents",
+    "ai-agents",
+    "claude-code",
+    "observability",
+    "loop-engineering",
+    "agent-experience",
+    "cli",
+    "skills",
+    "mcp"
+  ],
+  "author": "Bharath Natarajan <hi@bharath.sh> (https://bharath.sh)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ]
+}
