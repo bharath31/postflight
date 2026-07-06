@@ -2,6 +2,10 @@
 
 **read your agent's run back.**
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/bharath31/postflight/main/examples/demo.svg" alt="postflight flight review — the output of npx agent-postflight --demo" width="760">
+</p>
+
 vercel shipped agent observability into deploys this week. langsmith, langfuse, braintrust,
 helicone all did it before them. the dashboard is table stakes now. it was never the point.
 
