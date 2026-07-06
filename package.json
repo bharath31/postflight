@@ -1,7 +1,7 @@
 {
   "name": "agent-postflight",
-  "version": "0.2.0",
-  "description": "Read your agent's run back. A harness-neutral CLI that turns an agent transcript into a flight review + a skill to extract — so the next run is better, not just observed.",
+  "version": "0.3.0",
+  "description": "Read your agent's run back. A harness-neutral CLI (Claude Code + OpenAI) that turns an agent transcript into a flight review + a skill to extract — so the next run is better, not just observed.",
   "type": "module",
   "bin": {
     "agent-postflight": "bin/postflight.js",
@@ -14,6 +14,7 @@
     "agents",
     "ai-agents",
     "claude-code",
+    "openai",
     "observability",
     "loop-engineering",
     "agent-experience",

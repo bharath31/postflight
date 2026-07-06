@@ -60,5 +60,19 @@ const md = toMarkdown(a, { source: fixture });
 ok(md.includes("redundant work"), `report includes redundant section`);
 ok(md.includes("retry loops"), `report includes retry section`);
 
+// --- OpenAI-format adapter (auto-detected; same harness-neutral shape) ---
+const oai = parseTranscript(join(here, "fixture-openai.jsonl"));
+const oaiA = analyze(oai);
+ok(oai.format === "openai", `openai format auto-detected (got ${oai.format})`);
+ok(oai.toolCalls.length === 4, `4 tool calls parsed from openai log (got ${oai.toolCalls.length})`);
+ok(oai.usage.output === 660, `completion_tokens summed (got ${oai.usage.output}, want 660)`);
+ok(oai.assistantTurns === 4, `4 assistant turns (got ${oai.assistantTurns})`);
+const sd = oaiA.redundant.find((r) => r.name === "search_docs");
+ok(sd && sd.count === 3, `search_docs flagged redundant 3x (got ${sd && sd.count})`);
+ok(!oaiA.redundant.some((r) => r.name === "write_file"), `write_file (a mutation) not flagged as redundant read`);
+ok(oaiA.skill && /search.docs/.test(oaiA.skill.name), `skill named for the custom tool (got ${oaiA.skill && oaiA.skill.name})`);
+const oaiMd = toMarkdown(oaiA, { source: "openai" });
+ok(oaiMd.includes("flight review"), `openai report renders`);
+
 console.log(`\npostflight tests: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

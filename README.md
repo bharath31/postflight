@@ -80,9 +80,22 @@ postflight --skill            write the proposed skill to .claude/skills/<name>/
 
 ## harness-neutral by design
 
-the Claude Code JSONL reader is the first adapter. the analysis never sees the format — so
-OpenAI Agents SDK, LangGraph, and raw-log adapters are additive, not rewrites. (Claude Code
-first because it's where the transcripts already live on disk. more adapters next.)
+the analysis never sees the format — each harness gets a small adapter, and they all emit the same
+shape. **two ship today, auto-detected (no flag):**
+
+- **Claude Code** — `~/.claude/projects/**/*.jsonl` (the default, and the most battle-tested path)
+- **OpenAI-format** — a JSONL of chat-completion responses *or* raw message arrays with `tool_calls` /
+  `role:"tool"` (the OpenAI Agents SDK / Chat Completions shape)
+
+point it at either and it just works — the format is detected for you:
+
+```
+postflight run.jsonl          # claude code or openai — detected automatically
+```
+
+LangGraph and raw-log adapters are next; because the analyzer never learns the format, they're
+additive, not rewrites. (the OpenAI adapter is new — if your logs don't parse, open an issue with a
+small sample and i'll fix it.)
 
 ## the honest caveat
 

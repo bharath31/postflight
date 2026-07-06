@@ -1,0 +1,8 @@
+{"object":"chat.completion","created":1751800000,"usage":{"prompt_tokens":1200,"completion_tokens":150},"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"c1","type":"function","function":{"name":"search_docs","arguments":"{\"query\":\"rate limiting\"}"}}]}}]}
+{"role":"tool","tool_call_id":"c1","content":"rate limiting docs: token bucket, sliding window, per-user keys ... (long)"}
+{"object":"chat.completion","created":1751800010,"usage":{"prompt_tokens":1400,"completion_tokens":120},"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"c2","type":"function","function":{"name":"search_docs","arguments":"{\"query\":\"rate limiting\"}"}}]}}]}
+{"role":"tool","tool_call_id":"c2","content":"rate limiting docs: token bucket, sliding window, per-user keys ... (long)"}
+{"object":"chat.completion","created":1751800020,"usage":{"prompt_tokens":1600,"completion_tokens":300},"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"c3","type":"function","function":{"name":"search_docs","arguments":"{\"query\":\"rate limiting\"}"}}]}}]}
+{"role":"tool","tool_call_id":"c3","content":"rate limiting docs: token bucket, sliding window, per-user keys ... (long)"}
+{"object":"chat.completion","created":1751800030,"usage":{"prompt_tokens":1700,"completion_tokens":90},"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"c4","type":"function","function":{"name":"write_file","arguments":"{\"path\":\"ratelimit.md\"}"}}]}}]}
+{"role":"tool","tool_call_id":"c4","content":"ok, written"}
