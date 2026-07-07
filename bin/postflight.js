@@ -3,7 +3,7 @@
 // usage: postflight [transcript.jsonl] [--json] [--skill] [--list]
 // with no path, it finds your most recent Claude Code transcript.
 
-import { readdirSync, statSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { readdirSync, statSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -46,6 +46,11 @@ function findTranscripts() {
 }
 
 function main() {
+  if (flags.has("--version") || flags.has("-v")) {
+    const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
+    console.log(pkg.version);
+    return;
+  }
   if (flags.has("--help") || flags.has("-h")) {
     console.log(
       `postflight — read your agent's run back.\n\n` +
@@ -54,7 +59,8 @@ function main() {
         `  postflight --demo               review a bundled sample run (no setup needed)\n` +
         `  postflight --list               list recent runs\n` +
         `  postflight --json               emit findings as JSON\n` +
-        `  postflight --skill              write the proposed skill to .claude/skills/<name>/SKILL.md\n`
+        `  postflight --skill              write the proposed skill to .claude/skills/<name>/SKILL.md\n` +
+        `  postflight --version            print the version\n`
     );
     return;
   }
