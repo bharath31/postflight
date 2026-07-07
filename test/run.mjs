@@ -74,5 +74,13 @@ ok(oaiA.skill && /search.docs/.test(oaiA.skill.name), `skill named for the custo
 const oaiMd = toMarkdown(oaiA, { source: "openai" });
 ok(oaiMd.includes("flight review"), `openai report renders`);
 
+// --- retry loops are not double-listed under redundant work ---
+// the bundled demo session has an `npm run lint` that errors then retries — it
+// belongs to the retry section, not to "redundant work".
+const demo = analyze(parseTranscript(join(here, "..", "examples", "session.jsonl")));
+ok(demo.retryChains.some((c) => /lint/.test(c.target)), `demo: lint retry loop detected`);
+ok(!demo.redundant.some((r) => /lint/.test(r.target)), `demo: lint not also listed under redundant work`);
+ok(demo.redundant.every((r) => r.name === "Read"), `demo: redundant work is reads-only after retry dedupe`);
+
 console.log(`\npostflight tests: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
