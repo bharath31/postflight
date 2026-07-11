@@ -4,3 +4,4 @@ node_modules/
 .claude/skills/
 npm-debug.log*
 .env
+web/demo.js

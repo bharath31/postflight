@@ -1,0 +1,14 @@
+# postflight
+
+> read your agent's run back. a tiny, local, harness-neutral CLI that turns an AI-agent
+> transcript into a flight review + the skill to extract — redundant work, retry loops,
+> heaviest turns, and the one repeated thing worth capturing as a SKILL.md.
+
+- install: `npx agent-postflight` (npm package: agent-postflight; commands: postflight, agent-postflight)
+- default: reads your most recent Claude Code run (~/.claude/projects/**/*.jsonl)
+- also parses OpenAI-format JSONL (chat completions / Agents SDK shape) — auto-detected
+- `--demo` runs a bundled sample; `--skill` writes the proposed SKILL.md scaffold; `--json` for machines
+- local-first: nothing uploads; analysis runs on your machine (or in-tab on this site's playground)
+- honest caveat: short, tight runs produce no findings — that is a good run, not a failure
+- source: https://github.com/bharath31/postflight (MIT)
+- author: Bharath Natarajan — https://bharath.sh

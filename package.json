@@ -1,14 +1,15 @@
 {
   "name": "agent-postflight",
   "version": "0.3.0",
-  "description": "Read your agent's run back. A harness-neutral CLI (Claude Code + OpenAI) that turns an agent transcript into a flight review + a skill to extract — so the next run is better, not just observed.",
+  "description": "Read your agent's run back. A harness-neutral CLI (Claude Code + OpenAI) that turns an agent transcript into a flight review + a skill to extract \u2014 so the next run is better, not just observed.",
   "type": "module",
   "bin": {
     "agent-postflight": "bin/postflight.js",
     "postflight": "bin/postflight.js"
   },
   "scripts": {
-    "test": "node test/run.mjs"
+    "test": "node test/run.mjs",
+    "build:web": "esbuild web/src/demo.js --bundle --format=iife --outfile=web/demo.js --minify --alias:node:fs=./web/shims/fs.js --alias:node:os=./web/shims/os.js --loader:.jsonl=text"
   },
   "keywords": [
     "agents",

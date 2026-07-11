@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>postflight — read your agent's run back</title>
+<meta name="description" content="a tiny, local, harness-neutral CLI that turns an agent transcript into a flight review + the skill to extract. observability shows you the run; postflight closes the loop." />
+<meta property="og:title" content="postflight — read your agent's run back" />
+<meta property="og:description" content="one command turns your agent's transcript into a flight review + the skill to extract. no signup, no SDK, nothing uploads." />
+<meta property="og:url" content="https://postflight.bharath.sh" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0E16'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23E5A13C' stroke-width='2'/%3E%3Cpath d='M16 16 L22 10' stroke='%23E5A13C' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2.4' fill='%23E5A13C'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --night: #0a0e16;
+    --panel: #10151f;
+    --card: #0d1320;
+    --line: #1e2635;
+    --ink: #e9e4d6;
+    --dim: #7e8aa0;
+    --amber: #e5a13c;
+    --green: #79c980;
+    --red: #e06456;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(229, 161, 60, 0.35); }
+  a { color: inherit; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  nav { display: flex; align-items: baseline; justify-content: space-between; padding: 28px 0 0; }
+  .wordmark { font-family: var(--mono); font-weight: 600; font-size: 15px; letter-spacing: 0.02em; text-decoration: none; }
+  .wordmark .dot { color: var(--amber); }
+  nav .links { display: flex; gap: 22px; font-family: var(--mono); font-size: 13px; }
+  nav .links a { color: var(--dim); text-decoration: none; }
+  nav .links a:hover, nav .links a:focus-visible { color: var(--ink); }
+
+  /* hero */
+  header { padding: 84px 0 44px; }
+  h1 {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(42px, 7vw, 68px);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--amber); }
+  .sub {
+    margin-top: 20px;
+    max-width: 56ch;
+    color: var(--dim);
+    font-size: 17px;
+  }
+  .sub strong { color: var(--ink); font-weight: 500; }
+  .cmd {
+    margin-top: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .cmd .p { color: var(--dim); user-select: none; }
+  .cmd button {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .cmd button:hover, .cmd button:focus-visible { color: var(--amber); border-color: var(--amber); }
+
+  /* the debrief card */
+  .live-line {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--dim);
+    margin-bottom: 12px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(121, 201, 128, 0.8);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.45; } }
+
+  #card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  #card.dropping { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(229, 161, 60, 0.18); }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 18px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+  }
+  .rec { color: var(--red); font-weight: 600; letter-spacing: 0.08em; }
+  .card-head .ticks { flex: 1; height: 8px; background-image: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 9px); opacity: 0.7; }
+  #src-name { max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  #report { padding: 26px 30px 30px; font-family: var(--mono); font-size: 13.5px; line-height: 1.75; }
+  #report .r-title { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 26px; color: var(--ink); margin-bottom: 4px; }
+  #report h4 { font-size: 13.5px; font-weight: 600; color: var(--amber); margin: 22px 0 6px; }
+  #report p { margin: 8px 0; color: var(--dim); }
+  #report p code, #report li code { color: var(--ink); background: rgba(233, 228, 214, 0.07); padding: 1px 5px; border-radius: 4px; }
+  #report strong { color: var(--ink); font-weight: 600; }
+  #report strong.bad { color: var(--red); }
+  #report ul { list-style: none; padding: 0; margin: 6px 0; }
+  #report li { padding: 3px 0 3px 18px; position: relative; color: var(--dim); }
+  #report li::before { content: "·"; position: absolute; left: 4px; color: var(--amber); }
+  #report .flag { border-left: 2px solid var(--green); padding: 6px 14px; margin: 14px 0; background: rgba(121, 201, 128, 0.06); color: var(--ink); }
+  #report .flag.warn { border-left-color: var(--amber); background: rgba(229, 161, 60, 0.07); }
+  #report .skill {
+    margin: 14px 0;
+    padding: 16px 18px;
+    background: var(--night);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--green);
+  }
+  #report .closing { color: var(--dim); font-style: italic; }
+  #report.printing > * { animation: rise 0.3s both; animation-delay: calc(var(--i, 0) * 45ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+  @media (prefers-reduced-motion: reduce) { #report.printing > * { animation: none; } .live-dot { animation: none; } }
+
+  .card-foot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 13px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .card-foot button {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: none;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .card-foot button:hover, .card-foot button:focus-visible { border-color: var(--amber); color: var(--amber); }
+  .card-foot .hint { color: var(--dim); margin-left: auto; }
+  #file-input { display: none; }
+
+  /* sections */
+  section { padding: 62px 0 0; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); margin-bottom: 14px; }
+  h2 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 32px; margin-bottom: 12px; }
+  .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 26px; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  .col { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .col h3 { font-family: var(--mono); font-size: 13.5px; font-weight: 600; margin-bottom: 8px; }
+  .col p { color: var(--dim); font-size: 14px; }
+  .col .k { color: var(--amber); }
+
+  .adapters { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; font-family: var(--mono); font-size: 13px; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; color: var(--ink); }
+  .chip .ok { color: var(--green); }
+  .chip.soon { color: var(--dim); border-style: dashed; }
+  .note { color: var(--dim); font-size: 14px; margin-top: 14px; max-width: 62ch; }
+
+  .caveat {
+    margin-top: 26px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 22px 26px;
+    max-width: 68ch;
+  }
+  .caveat p { color: var(--dim); font-size: 15px; }
+  .caveat p strong { color: var(--ink); font-weight: 500; }
+
+  .install { font-family: var(--mono); font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; margin-top: 26px; overflow-x: auto; }
+  .install div { padding: 3px 0; white-space: pre; }
+  .install .c { color: var(--dim); }
+
+  footer { margin-top: 84px; padding: 26px 0 44px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 13px; color: var(--dim); }
+  footer a { color: var(--dim); }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="wordmark" href="/">postflight<span class="dot">.</span></a>
+    <div class="links">
+      <a href="https://github.com/bharath31/postflight">github</a>
+      <a href="https://www.npmjs.com/package/agent-postflight">npm</a>
+      <a href="https://bharath.sh">bharath.sh</a>
+    </div>
+  </nav>
+
+  <header>
+    <h1>read your agent's<br /><em>run back.</em></h1>
+    <p class="sub">
+      observability shows you the run. postflight closes the loop — a tiny, local,
+      harness-neutral CLI that turns an agent transcript into a
+      <strong>flight review + the skill to extract</strong>. no signup, no SDK, no platform.
+    </p>
+    <div class="cmd"><span class="p">$</span> npx agent-postflight <button id="copy" type="button" aria-label="copy command">copy</button></div>
+  </header>
+
+  <main>
+    <div class="live-line">
+      <span class="live-dot" aria-hidden="true"></span>
+      this review was computed in your tab, just now — transcripts never leave your machine.
+    </div>
+
+    <div id="card" aria-label="live flight review">
+      <div class="card-head">
+        <span class="rec">● REC</span>
+        <span>FLIGHT&nbsp;REVIEW</span>
+        <span class="ticks" aria-hidden="true"></span>
+        <span id="src-name"></span>
+      </div>
+      <div id="report" aria-live="polite"></div>
+      <div class="card-foot">
+        <button id="btn-sample" type="button">replay the sample</button>
+        <button id="btn-open" type="button">open your .jsonl</button>
+        <input id="file-input" type="file" accept=".jsonl,.json,.txt" />
+        <span class="hint">or drop a transcript anywhere on this card</span>
+      </div>
+    </div>
+
+    <section>
+      <p class="eyebrow">what it finds</p>
+      <h2>findings, not dashboards.</h2>
+      <div class="cols">
+        <div class="col">
+          <h3><span class="k">redundant work</span></h3>
+          <p>the same file read twelve times, the same command re-run, the same search repeated — with a rough token cost for every re-read.</p>
+        </div>
+        <div class="col">
+          <h3><span class="k">retry loops</span></h3>
+          <p>a tool that errored, then got tried again — and whether it ever recovered. the loop you'd never spot scrolling a dashboard.</p>
+        </div>
+        <div class="col">
+          <h3><span class="k">the skill to extract</span></h3>
+          <p>the one thing repeated enough that it should be captured once. <code>--skill</code> writes the SKILL.md scaffold. that's the loop, closed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">harness-neutral</p>
+      <h2>the analyzer never learns your format.</h2>
+      <div class="adapters">
+        <span class="chip"><span class="ok">●</span> claude code</span>
+        <span class="chip"><span class="ok">●</span> openai format</span>
+        <span class="chip soon">○ langgraph — next</span>
+        <span class="chip soon">○ raw logs — next</span>
+      </div>
+      <p class="note">
+        each harness gets a small adapter; they all emit the same flat shape, so
+        adapters are additive, not rewrites. point it at either format — detection is automatic.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">the honest caveat</p>
+      <div class="caveat">
+        <p>
+          if your runs are short and tight, postflight will tell you so and find
+          <strong>nothing to fix — that's a good run, not a failure.</strong> and
+          <code>--skill</code> gives you a scaffold, not a finished skill; you still write the
+          durable facts. it will not fabricate a problem to look useful.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <p class="eyebrow">install</p>
+      <h2>one command. your latest run.</h2>
+      <div class="install">
+        <div>npx agent-postflight              <span class="c"># review your latest claude code run</span></div>
+        <div>npx agent-postflight --demo       <span class="c"># the bundled sample, zero setup</span></div>
+        <div>npx agent-postflight run.jsonl    <span class="c"># any transcript — format auto-detected</span></div>
+        <div>npx agent-postflight --skill      <span class="c"># write the extracted SKILL.md scaffold</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>built by <a href="https://bharath.sh">bharath natarajan</a> — loop engineering as a tool. MIT.</span>
+    <span><a href="https://github.com/bharath31/postflight">github</a> · <a href="https://www.npmjs.com/package/agent-postflight">npm</a></span>
+  </footer>
+</div>
+<script src="/demo.js" defer></script>
+</body>
+</html>
