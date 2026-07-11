@@ -22,7 +22,8 @@ npx agent-postflight
 ```
 
 no signup, no SDK, no platform. it reads your most recent Claude Code run and tells you where the
-loop leaked.
+loop leaked. or try it in the browser — the same analyzer, running on your transcript in-tab:
+**[postflight.pages.dev](https://postflight.pages.dev)**.
 
 ## the demo is the argument
 
