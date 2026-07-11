@@ -10,8 +10,8 @@
   <img src="https://raw.githubusercontent.com/bharath31/postflight/main/examples/demo.svg" alt="postflight flight review — the output of npx agent-postflight --demo" width="760">
 </p>
 
-vercel shipped agent observability into deploys this week. langsmith, langfuse, braintrust,
-helicone all did it before them. the dashboard is table stakes now. it was never the point.
+vercel shipped agent observability into deploys. langsmith, langfuse, braintrust, helicone
+all did it before them. the dashboard is table stakes now. it was never the point.
 
 the point of a run is to make the *next* run better. postflight is a tiny, local, harness-neutral
 CLI that turns an agent transcript into a **flight review + the skill to extract** — not a chart to
